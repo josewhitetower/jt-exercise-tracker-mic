@@ -182,8 +182,10 @@ func GetUserExercises(w http.ResponseWriter, r *http.Request) {
 		user.Count = len(exercises)
 		// send the user log as response
 		json.NewEncoder(w).Encode(user)
+		return
 
 	}
+	http.Error(w, "User not found", 404)
 
 }
 
