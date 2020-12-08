@@ -118,6 +118,7 @@ func CreateExercise(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// check if there's a user with the user_id field
@@ -130,6 +131,7 @@ func CreateExercise(w http.ResponseWriter, r *http.Request) {
 	newExercise, err := insertExercise(exercise)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	// send all the exercises as response
 	json.NewEncoder(w).Encode(newExercise)
