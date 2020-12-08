@@ -71,7 +71,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if existingUser.UserName != "" {
-		http.Error(w, "Username already taken", 400)
+		http.Error(w, "Username already taken", 409)
 		return
 	}
 	// call insert user function and pass the user
