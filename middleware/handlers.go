@@ -368,7 +368,7 @@ func getUserExercises(user models.User, params parameters) ([]models.Exercise, e
 	// var exercises []models.Exercise
 
 	// create the select sql query
-	sqlStatement := `SELECT description, duration, date FROM exercises WHERE user_id=$1`
+	sqlStatement := `SELECT description, duration, date, _id FROM exercises WHERE user_id=$1`
 
 	if params.From != "" {
 		sqlStatement = sqlStatement + ` AND date >= timestamp ` + `'` + params.From + `'`
@@ -394,7 +394,7 @@ func getUserExercises(user models.User, params parameters) ([]models.Exercise, e
 		var exercise models.Exercise
 
 		// unmarshal the row object to url
-		err := rows.Scan(&exercise.Description, &exercise.Duration, &exercise.Date)
+		err := rows.Scan(&exercise.Description, &exercise.Duration, &exercise.Date, &exercise.ID)
 		if err != nil {
 			return userLog, err
 		}
