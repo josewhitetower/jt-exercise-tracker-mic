@@ -138,6 +138,32 @@ func CreateExercise(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// EditExercise will edit an exercise
+func EditExercise(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Context-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// create an empty exercise of type models.Exercise
+	var exercise models.Exercise
+
+	// decode the json request to user
+	err := json.NewDecoder(r.Body).Decode(&exercise)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	updatedExercise, err := updateExercise(exercise)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// send all the exercises as response
+	json.NewEncoder(w).Encode(updatedExercise)
+
+}
+
 type parameters struct {
 	Limit string
 	From  string
@@ -255,6 +281,35 @@ func insertExercise(exercise models.Exercise) (models.Exercise, error) {
 	return newExercise, returnErr
 }
 
+// update one exercise in the DB
+func updateExercise(exercise models.Exercise) (models.Exercise, error) {
+	var newExercise models.Exercise
+	var returnErr error
+
+	if exercise.ID != 0 {
+		// create the postgres db connection
+		db := createConnection()
+
+		// close the db connection
+		defer db.Close()
+
+		// create the insert sql query
+		sqlStatement := `UPDATE exercises SET description=$1, date=$2, duration=$3 WHERE _id=$4 RETURNING _id,description,duration,date,user_id`
+
+		// execute the sql statement
+		row := db.QueryRow(sqlStatement, exercise.Description, exercise.Date, exercise.Duration, exercise.ID)
+		err := row.Scan(&newExercise.ID, &newExercise.Description, &newExercise.Duration, &newExercise.Date, &newExercise.UserID)
+
+		if err != nil {
+			returnErr = err
+		}
+
+		fmt.Printf("Updated a single record %v", newExercise.ID)
+
+	}
+	return newExercise, returnErr
+}
+
 // get all users
 func getAllUsers() ([]models.User, error) {
 	// create the postgres db connection
@@ -354,6 +409,37 @@ func getUserByID(userID int64) (models.User, error) {
 	}
 	// return empty user on error
 	return user, err
+}
+
+func getExerciseByID(exerciseID int64) (models.Exercise, error) {
+	// create the postgres db connection
+	db := createConnection()
+
+	// close the db connection
+	defer db.Close()
+
+	// create a exercise of models.Exercise type
+	var exercise models.Exercise
+
+	// create the insert sql query
+	sqlStatement := `SELECT * FROM exercises WHERE _id=$1`
+	// execute the sql statement
+	row := db.QueryRow(sqlStatement, exerciseID)
+
+	// unmarshal the row object to url
+	err := row.Scan(&exercise.Description, &exercise.Duration, &exercise.Date, &exercise.ID)
+	fmt.Println(exerciseID)
+
+	switch err {
+	case sql.ErrNoRows:
+		return exercise, nil
+	case nil:
+		return exercise, nil
+	default:
+		return exercise, err
+	}
+	// return empty exercise on error
+	return exercise, err
 }
 
 func getUserExercises(user models.User, params parameters) ([]models.Exercise, error) {
