@@ -468,7 +468,7 @@ func getUserExercises(user models.User, params parameters) ([]models.Exercise, e
 	}
 
 	// TODO: find a way to escape the rest of the params, so they can be used on db.Query
-
+	fmt.Println(sqlStatement)
 	// execute the sql statement
 	rows, err := db.Query(sqlStatement, user.ID)
 
