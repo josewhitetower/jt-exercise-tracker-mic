@@ -11,8 +11,8 @@ type User struct {
 // Exercise Schema for the exercises table
 type Exercise struct {
 	UserID      int64  `json:"user_id,omitempty"`
-	Description string `json:"description"`
-	Duration    int64  `json:"duration"`
-	Date        string `json:"date"`
+	Description string `json:"description,omitempty"`
+	Duration    int64  `json:"duration,omitempty"`
+	Date        string `json:"date,omitempty"`
 	ID          int64  `json:"_id,omitempty"`
 }
