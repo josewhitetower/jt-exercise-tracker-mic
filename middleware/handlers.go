@@ -164,6 +164,32 @@ func EditExercise(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// DeleteExercise will edit an exercise
+func DeleteExercise(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Context-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// create an empty exercise of type models.Exercise
+	var exercise models.Exercise
+
+	// decode the json request to user
+	err := json.NewDecoder(r.Body).Decode(&exercise)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	oldExercise, err := deleteExercise(exercise.ID)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		return
+	}
+	// send all the exercises as response
+	json.NewEncoder(w).Encode(oldExercise)
+
+}
+
 type parameters struct {
 	Limit string
 	From  string
@@ -281,6 +307,35 @@ func insertExercise(exercise models.Exercise) (models.Exercise, error) {
 	return newExercise, returnErr
 }
 
+// delete one exercise in the DB
+func deleteExercise(id int64) (models.Exercise, error) {
+	var oldExercise models.Exercise
+	var returnErr error
+
+	if id != 0 {
+		// create the postgres db connection
+		db := createConnection()
+
+		// close the db connection
+		defer db.Close()
+
+		// create the insert sql query
+		sqlStatement := `DELETE FROM exercises WHERE _id=$1 RETURNING _id,description,duration,date,user_id`
+
+		// execute the sql statement
+		row := db.QueryRow(sqlStatement, id)
+		err := row.Scan(&oldExercise.ID, &oldExercise.Description, &oldExercise.Duration, &oldExercise.Date, &oldExercise.UserID)
+
+		if err != nil {
+			returnErr = err
+		}
+
+		fmt.Printf("Deleted a single record %v", oldExercise.ID)
+
+	}
+	return oldExercise, returnErr
+}
+
 // update one exercise in the DB
 func updateExercise(exercise models.Exercise) (models.Exercise, error) {
 	var newExercise models.Exercise
@@ -378,8 +433,7 @@ func getUserByUsername(userName string) (models.User, error) {
 	default:
 		return user, err
 	}
-	// return empty user on error
-	return user, err
+
 }
 
 func getUserByID(userID int64) (models.User, error) {
@@ -407,8 +461,6 @@ func getUserByID(userID int64) (models.User, error) {
 	default:
 		return user, err
 	}
-	// return empty user on error
-	return user, err
 }
 
 func getExerciseByID(exerciseID int64) (models.Exercise, error) {
@@ -428,7 +480,6 @@ func getExerciseByID(exerciseID int64) (models.Exercise, error) {
 
 	// unmarshal the row object to url
 	err := row.Scan(&exercise.Description, &exercise.Duration, &exercise.Date, &exercise.ID)
-	fmt.Println(exerciseID)
 
 	switch err {
 	case sql.ErrNoRows:
@@ -467,8 +518,7 @@ func getUserExercises(user models.User, params parameters) ([]models.Exercise, e
 		sqlStatement = sqlStatement + " LIMIT " + params.Limit
 	}
 
-	// TODO: find a way to escape the rest of the params, so they can be used on db.Query
-	fmt.Println(sqlStatement)
+	// TODO: find a way to escape the rest of the params, so they can be used on db.Query also a way to avoid sql injection
 	// execute the sql statement
 	rows, err := db.Query(sqlStatement, user.ID)
 
