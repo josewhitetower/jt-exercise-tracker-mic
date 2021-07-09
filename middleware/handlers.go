@@ -71,7 +71,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if existingUser.UserName != "" {
-		http.Error(w, "Username already taken", 409)
+		http.Error(w, "Username already taken", http.StatusConflict)
 		return
 	}
 	// call insert user function and pass the user
@@ -182,7 +182,7 @@ func DeleteExercise(w http.ResponseWriter, r *http.Request) {
 
 	oldExercise, err := deleteExercise(exercise.ID)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	// send all the exercises as response
@@ -237,7 +237,7 @@ func GetUserExercises(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-	http.Error(w, "User not found", 404)
+	http.Error(w, "User not found", http.StatusNotFound)
 
 }
 
@@ -489,8 +489,6 @@ func getExerciseByID(exerciseID int64) (models.Exercise, error) {
 	default:
 		return exercise, err
 	}
-	// return empty exercise on error
-	return exercise, err
 }
 
 func getUserExercises(user models.User, params parameters) ([]models.Exercise, error) {
@@ -501,8 +499,6 @@ func getUserExercises(user models.User, params parameters) ([]models.Exercise, e
 	defer db.Close()
 
 	userLog := []models.Exercise{}
-
-	// var exercises []models.Exercise
 
 	// create the select sql query
 	sqlStatement := `SELECT description, duration, date, _id FROM exercises WHERE user_id=$1`
